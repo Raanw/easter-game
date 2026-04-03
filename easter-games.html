@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#78350F">
+<title>Easter Games</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiRWFzdGVyIEdhbWVzIiwic2hvcnRfbmFtZSI6IkVhc3RlciIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjRkZGQkVCIiwidGhlbWVfY29sb3IiOiIjNzgzNTBGIn0=">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: Calibri, 'Segoe UI', sans-serif;
+    background: linear-gradient(170deg, #FFFBEB 0%, #FEF3C7 50%, #FDE68A 100%);
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    color: #78350F;
+  }
+
+  .screen { display: none; flex-direction: column; align-items: center; height: 100dvh; overflow-y: auto; padding: 1.5rem 1rem 2rem; }
+  .screen.active { display: flex; }
+
+  h1 { font-size: 2rem; font-weight: 700; margin: 0; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin: 0; }
+
+  .divider { width: 50px; height: 3px; background: #D97706; border-radius: 2px; margin: 0.5rem auto 0; }
+
+  /* Team cards */
+  .teams-row { display: flex; gap: 1rem; width: 100%; max-width: 400px; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; }
+  .team-card {
+    flex: 1 1 170px; max-width: 190px; background: #FFFBEB;
+    border-radius: 20px; padding: 1.3rem 1rem;
+    box-shadow: 0 4px 20px rgba(120,53,15,0.08);
+    border: 2px solid #FDE68A;
+    display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
+  }
+  .team-input {
+    width: 100%; text-align: center; font-family: Calibri, sans-serif;
+    font-size: 1.05rem; font-weight: 600; color: #78350F;
+    border: none; border-bottom: 2px dashed #FCD34D;
+    background: transparent; outline: none; padding: 0.25rem 0;
+  }
+  .team-input::placeholder { color: #D97706; opacity: 0.45; }
+  .team-score { font-size: 3.2rem; font-weight: 700; color: #92400E; line-height: 1; }
+
+  .score-btns { display: flex; gap: 0.75rem; }
+  .score-btn {
+    width: 46px; height: 46px; border-radius: 50%; border: none;
+    color: #FFFBEB; font-size: 1.4rem; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+  .score-btn.plus { background: #D97706; }
+  .score-btn.minus { background: #92400E; }
+
+  /* Buttons */
+  .btn-primary {
+    font-family: Calibri, sans-serif; font-weight: 700; font-size: 1.15rem;
+    color: #FFFBEB; background: #B45309; border: none; border-radius: 50px;
+    padding: 0.9rem 2.2rem; box-shadow: 0 4px 16px rgba(180,83,9,0.25);
+    cursor: pointer; transition: transform 0.12s;
+  }
+  .btn-outline {
+    font-family: Calibri, sans-serif; font-weight: 600; font-size: 0.85rem;
+    color: #92400E; background: transparent; border: 1.5px solid #D97706;
+    border-radius: 50px; padding: 0.5rem 1.4rem; cursor: pointer; opacity: 0.7;
+  }
+  .btn-outline:hover { opacity: 1; }
+
+  .bottom-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem; }
+
+  /* Charades screen */
+  .charades-bg {
+    background: linear-gradient(170deg, #78350F 0%, #92400E 50%, #B45309 100%);
+  }
+  .word-card {
+    background: rgba(255,251,235,0.1); backdrop-filter: blur(12px);
+    border-radius: 28px; padding: 3rem 2.5rem; min-width: 240px; text-align: center;
+    border: 1px solid rgba(253,230,138,0.2);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    animation: fadeIn 0.25s ease-out;
+  }
+  .word-text { font-size: 3.2rem; font-weight: 700; color: #FFFBEB; }
+  .words-left { color: rgba(254,243,199,0.4); font-size: 0.85rem; margin-top: 1rem; }
+  .btn-next {
+    margin-top: 2rem; font-family: Calibri, sans-serif; font-weight: 700;
+    font-size: 1.1rem; color: #78350F; background: #FDE68A;
+    border: none; border-radius: 50px; padding: 0.9rem 2.8rem;
+    box-shadow: 0 4px 16px rgba(253,230,138,0.3); cursor: pointer;
+  }
+  .btn-back {
+    position: absolute; top: 1.5rem; left: 1.5rem;
+    background: rgba(255,251,235,0.15); border: 1px solid rgba(255,251,235,0.25);
+    border-radius: 14px; padding: 0.5rem 1.1rem; color: #FEF3C7;
+    font-family: Calibri, sans-serif; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+  }
+
+  /* Word manager */
+  .word-manager { width: 100%; max-width: 400px; margin-top: 1.5rem; }
+  .word-list { list-style: none; max-height: 40dvh; overflow-y: auto; }
+  .word-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.7rem 1rem; background: #FFFBEB; border-radius: 12px;
+    margin-bottom: 0.5rem; border: 1.5px solid #FDE68A;
+  }
+  .word-item span { font-weight: 600; color: #78350F; font-size: 1rem; }
+  .btn-remove {
+    background: none; border: none; color: #B45309; font-size: 1.2rem;
+    cursor: pointer; padding: 0.2rem 0.5rem; opacity: 0.6;
+  }
+  .btn-remove:hover { opacity: 1; }
+
+  .add-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+  .add-input {
+    flex: 1; font-family: Calibri, sans-serif; font-size: 1rem;
+    padding: 0.6rem 1rem; border-radius: 12px; border: 1.5px solid #FCD34D;
+    background: #FFFBEB; outline: none; color: #78350F;
+  }
+  .add-input::placeholder { color: #D97706; opacity: 0.4; }
+  .btn-add {
+    font-family: Calibri, sans-serif; font-weight: 700; font-size: 1rem;
+    background: #D97706; color: #FFFBEB; border: none; border-radius: 12px;
+    padding: 0.6rem 1.2rem; cursor: pointer;
+  }
+
+  .import-label {
+    display: inline-block; font-family: Calibri, sans-serif; font-weight: 600;
+    font-size: 0.85rem; color: #92400E; background: transparent;
+    border: 1.5px solid #D97706; border-radius: 50px;
+    padding: 0.5rem 1.4rem; cursor: pointer; opacity: 0.7; text-align: center;
+  }
+  .import-label:hover { opacity: 1; }
+  .hidden-input { display: none; }
+
+  .empty-msg { text-align: center; color: #B45309; opacity: 0.5; padding: 2rem 0; font-size: 0.95rem; }
+
+  /* Dialog overlay */
+  .dialog-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4); z-index: 100;
+    align-items: center; justify-content: center; padding: 1rem;
+  }
+  .dialog-overlay.active { display: flex; }
+  .dialog-box {
+    background: #FFFBEB; border-radius: 20px; padding: 1.8rem 1.5rem;
+    max-width: 320px; width: 100%; text-align: center;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+  }
+  .dialog-box p { font-size: 1rem; font-weight: 600; color: #78350F; margin-bottom: 1.2rem; line-height: 1.4; }
+  .dialog-btns { display: flex; gap: 0.75rem; justify-content: center; }
+  .dialog-btns button {
+    font-family: Calibri, sans-serif; font-weight: 700; font-size: 1rem;
+    border: none; border-radius: 50px; padding: 0.6rem 1.8rem; cursor: pointer;
+  }
+  .btn-yes { background: #B45309; color: #FFFBEB; }
+  .btn-no { background: transparent; border: 1.5px solid #D97706 !important; color: #92400E; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.93); }
+    to { opacity: 1; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== MAIN SCREEN ===== -->
+<div id="mainScreen" class="screen active">
+  <div style="text-align:center; margin-bottom:0.5rem;">
+    <div style="font-size:2.8rem;">🐣</div>
+    <h1>Easter Games</h1>
+    <div class="divider"></div>
+  </div>
+
+  <div class="teams-row">
+    <div class="team-card">
+      <input class="team-input" id="team1Name" placeholder="Team 1">
+      <div class="team-score" id="team1Score">0</div>
+      <div class="score-btns">
+        <button class="score-btn minus" onclick="changeScore(0,-1)">−</button>
+        <button class="score-btn plus" onclick="changeScore(0,1)">+</button>
+      </div>
+    </div>
+    <div class="team-card">
+      <input class="team-input" id="team2Name" placeholder="Team 2">
+      <div class="team-score" id="team2Score">0</div>
+      <div class="score-btns">
+        <button class="score-btn minus" onclick="changeScore(1,-1)">−</button>
+        <button class="score-btn plus" onclick="changeScore(1,1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary" style="margin-top:2rem;" onclick="startCharades()">🎭 Start Charades!</button>
+  <button class="btn-outline" style="margin-top:0.8rem;" onclick="showScreen('wordsScreen')">📝 Manage Words</button>
+
+  <div class="bottom-actions" style="margin-top:1.5rem;">
+    <button class="btn-outline" onclick="confirmClearData()">Clear Data</button>
+    <button class="btn-outline" onclick="confirmClearAllWords()">Clear All Words</button>
+  </div>
+</div>
+
+<!-- ===== WORDS MANAGEMENT SCREEN ===== -->
+<div id="wordsScreen" class="screen">
+  <div style="text-align:center;">
+    <h2 style="color:#78350F;">📝 Manage Words</h2>
+    <div class="divider"></div>
+  </div>
+
+  <div class="word-manager">
+    <div class="add-row">
+      <input class="add-input" id="newWordInput" placeholder="Add a word…" onkeydown="if(event.key==='Enter')addWord()">
+      <button class="btn-add" onclick="addWord()">Add</button>
+    </div>
+
+    <div style="display:flex; gap:0.5rem; margin-top:0.75rem; justify-content:center; flex-wrap:wrap;">
+      <label class="import-label">
+        Import CSV
+        <input type="file" accept=".csv,.txt" class="hidden-input" onchange="importCSV(event)">
+      </label>
+      <button class="btn-outline" onclick="exportCSV()">Export CSV</button>
+    </div>
+
+    <ul class="word-list" id="wordList" style="margin-top:1rem;"></ul>
+    <div class="empty-msg" id="emptyMsg" style="display:none;">No words yet. Add some above!</div>
+  </div>
+
+  <button class="btn-outline" style="margin-top:1.5rem;" onclick="showScreen('mainScreen')">← Back</button>
+</div>
+
+<!-- ===== CHARADES SCREEN ===== -->
+<div id="charadesScreen" class="screen charades-bg">
+  <button class="btn-back" onclick="exitCharades()">← Back</button>
+
+  <div style="font-size:2.2rem; margin-bottom:0.4rem;">🎭</div>
+  <h2 style="color:#FDE68A; margin-bottom:2rem;">Charades</h2>
+
+  <div id="charadesContent" style="display:flex; flex-direction:column; align-items:center;"></div>
+</div>
+
+<!-- ===== CONFIRM DIALOG ===== -->
+<div class="dialog-overlay" id="confirmDialog">
+  <div class="dialog-box">
+    <p id="confirmMsg">Are you sure?</p>
+    <div class="dialog-btns">
+      <button class="btn-no" onclick="closeDialog()">No</button>
+      <button class="btn-yes" id="confirmYes">Yes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+let teams = [{ name: '', score: 0 }, { name: '', score: 0 }];
+let words = ['Vad', 'Var', 'Det', 'Jag', 'Sa'];
+let charadesRemaining = [];
+let charadesCurrentWord = null;
+
+const LS_TEAMS = 'easter_teams';
+const LS_WORDS = 'easter_words';
+
+// ── Persistence ──
+function save() {
+  teams[0].name = document.getElementById('team1Name').value;
+  teams[1].name = document.getElementById('team2Name').value;
+  localStorage.setItem(LS_TEAMS, JSON.stringify(teams));
+  localStorage.setItem(LS_WORDS, JSON.stringify(words));
+}
+
+function load() {
+  try {
+    const t = JSON.parse(localStorage.getItem(LS_TEAMS));
+    if (t) teams = t;
+  } catch(e){}
+  try {
+    const w = JSON.parse(localStorage.getItem(LS_WORDS));
+    if (w && w.length >= 0) words = w;
+  } catch(e){}
+  renderTeams();
+}
+
+function renderTeams() {
+  document.getElementById('team1Name').value = teams[0].name;
+  document.getElementById('team2Name').value = teams[1].name;
+  document.getElementById('team1Score').textContent = teams[0].score;
+  document.getElementById('team2Score').textContent = teams[1].score;
+}
+
+// ── Teams ──
+function changeScore(idx, delta) {
+  teams[idx].score = Math.max(0, teams[idx].score + delta);
+  renderTeams();
+  save();
+}
+
+document.getElementById('team1Name').addEventListener('input', save);
+document.getElementById('team2Name').addEventListener('input', save);
+
+// ── Screens ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'wordsScreen') renderWordList();
+}
+
+// ── Word Management ──
+function renderWordList() {
+  const list = document.getElementById('wordList');
+  const empty = document.getElementById('emptyMsg');
+  list.innerHTML = '';
+  if (words.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  words.forEach((w, i) => {
+    const li = document.createElement('li');
+    li.className = 'word-item';
+    li.innerHTML = `<span>${escapeHtml(w)}</span><button class="btn-remove" onclick="removeWord(${i})">✕</button>`;
+    list.appendChild(li);
+  });
+}
+
+function addWord() {
+  const input = document.getElementById('newWordInput');
+  const val = input.value.trim();
+  if (!val) return;
+  words.push(val);
+  input.value = '';
+  save();
+  renderWordList();
+}
+
+function removeWord(idx) {
+  words.splice(idx, 1);
+  save();
+  renderWordList();
+}
+
+function importCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const newWords = text.split(/[,\n\r]+/).map(w => w.trim()).filter(w => w.length > 0);
+    if (newWords.length > 0) {
+      words = words.concat(newWords);
+      save();
+      renderWordList();
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function exportCSV() {
+  if (words.length === 0) return;
+  const csv = words.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'easter_words.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ── Charades ──
+function startCharades() {
+  if (words.length === 0) {
+    showConfirm('No words added! Go to Manage Words to add some.', null);
+    document.getElementById('confirmYes').style.display = 'none';
+    return;
+  }
+  charadesRemaining = [...words].sort(() => Math.random() - 0.5);
+  charadesCurrentWord = charadesRemaining.shift();
+  showScreen('charadesScreen');
+  renderCharades();
+}
+
+function renderCharades() {
+  const container = document.getElementById('charadesContent');
+  if (charadesCurrentWord) {
+    container.innerHTML = `
+      <div class="word-card"><div class="word-text">${escapeHtml(charadesCurrentWord)}</div></div>
+      <div class="words-left">${charadesRemaining.length} word${charadesRemaining.length !== 1 ? 's' : ''} left</div>
+      <button class="btn-next" onclick="nextWord()">Nästa Ord →</button>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="word-card">
+        <div style="font-size:2.2rem; margin-bottom:0.6rem;">🎉</div>
+        <div style="font-size:1.3rem; font-weight:700; color:#FDE68A;">All words used!</div>
+        <div style="color:rgba(254,243,199,0.45); font-size:0.85rem; margin-top:0.5rem;">Go back and return to play again</div>
+      </div>
+    `;
+  }
+}
+
+function nextWord() {
+  if (charadesRemaining.length > 0) {
+    charadesCurrentWord = charadesRemaining.shift();
+  } else {
+    charadesCurrentWord = null;
+  }
+  renderCharades();
+}
+
+function exitCharades() {
+  showScreen('mainScreen');
+}
+
+// ── Confirm Dialog ──
+let pendingAction = null;
+
+function showConfirm(msg, action) {
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmYes').style.display = '';
+  document.getElementById('confirmDialog').classList.add('active');
+  pendingAction = action;
+}
+
+function closeDialog() {
+  document.getElementById('confirmDialog').classList.remove('active');
+  pendingAction = null;
+}
+
+document.getElementById('confirmYes').addEventListener('click', function() {
+  if (pendingAction) pendingAction();
+  closeDialog();
+});
+
+function confirmRemoveWord(idx) {
+  showConfirm(`Remove "${words[idx]}"?`, () => removeWord(idx));
+}
+
+function confirmClearData() {
+  showConfirm('Clear all team names and scores?', () => {
+    teams = [{ name: '', score: 0 }, { name: '', score: 0 }];
+    save();
+    renderTeams();
+  });
+}
+
+function confirmClearAllWords() {
+  showConfirm('Remove ALL words from charades?', () => {
+    words = [];
+    save();
+  });
+}
+
+// ── Util ──
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ── Init ──
+load();
+</script>
+</body>
+</html>
